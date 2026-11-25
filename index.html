@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anime Universe Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style id="css">
+/* VOICE: a director's production board — calm, cinematic, focused on one episode at a time.
+   IDEA: an anime storyboard sheet / film slate: numbered panels run down the page, each a stage.
+   PICTURE: a night-city skyline slate with a moon and the episode title clapped on it; below, the panel rail.
+   COLOUR and TYPE: night ink #0f1218, moon paper #f2ede3, crimson slate #e23b3b; Zen Kaku Gothic New + Noto Sans Bengali.
+   LAYOUT: slate hero on top, then two columns — stage rail left, the open stage panel right; stacks on phones. */
+:root{color-scheme:light dark;
+--bg:light-dark(#f2ede3,#0f1218);--card:light-dark(#fffdf8,#171b23);--ink:light-dark(#151820,#efe9dd);
+--mute:light-dark(#5e6270,#9aa0ad);--line:light-dark(#ddd5c6,#2a303b);--red:#e23b3b;--ok:light-dark(#2f7a4f,#5fc58b);
+--night:#0f1218;--moon:#f2ede3}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans Bengali","Zen Kaku Gothic New",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Zen Kaku Gothic New","Noto Sans Bengali",sans-serif;line-height:1.1;margin:0;text-wrap:balance}
+button,select,input,textarea{font:inherit;color:inherit}
+button{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+button.pri{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+button.okb{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+textarea,input,select{width:100%;font-size:16px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:10px 12px}
+textarea{min-height:120px;resize:vertical;line-height:1.55}
+.hero{background:var(--night);color:var(--moon);position:relative;overflow:hidden}
+.hero .in{max-width:1240px;margin:0 auto;padding:clamp(24px,4vw,48px) max(5vw,16px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:center}
+.hero h1{font-size:clamp(32px,5vw,50px);font-weight:900}
+.hero p{color:#c9c3b6;max-width:46ch;margin:12px 0 18px}
+.slate{position:relative;min-height:240px;border-radius:16px;overflow:hidden}
+.slate svg{position:absolute;inset:0;width:100%;height:100%}
+.eprow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.eprow select{max-width:280px;background:#1b2029;color:var(--moon);border-color:#343b48}
+.hero button{background:#1b2029;color:var(--moon);border-color:#343b48}
+.wrap{max-width:1240px;margin:0 auto;padding:24px max(5vw,16px) 64px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px}
+.rail{display:flex;flex-direction:column;gap:6px;position:sticky;top:12px;align-self:start}
+.step{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;padding:8px 10px;height:auto}
+.step .n{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:900;border:2px solid var(--line);font-family:"Zen Kaku Gothic New"}
+.step.on{border-color:var(--red)}
+.step.on .n{border-color:var(--red);color:var(--red)}
+.step.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.step small{display:block;color:var(--mute);font-size:13px}
+.tag{font-size:13px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.tag.done{color:var(--ok);border-color:var(--ok)}.tag.rev{color:var(--red);border-color:var(--red)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:clamp(16px,3vw,28px);display:flex;flex-direction:column;gap:16px}
+.panel h2{font-size:clamp(24px,3vw,32px)}
+.panel .goal{color:var(--mute)}
+label{font-weight:600;display:block;margin-bottom:6px}
+.out{white-space:pre-wrap;min-height:240px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.note{font-size:14px;color:var(--mute);border-left:3px solid var(--red);padding:6px 12px;background:var(--bg);border-radius:0 8px 8px 0}
+.bible{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.bible summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+.status{font-size:14px;color:var(--mute);min-height:22px}
+@media(max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}.rail{position:static;flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory}.step{flex:none;width:210px;scroll-snap-align:start}}
+@media(max-width:600px){.hero .in{grid-template-columns:minmax(0,1fr)}.slate{min-height:180px}}
+@media(prefers-reduced-motion:no-preference){.moon{animation:glow 6s ease-in-out infinite alternate}@keyframes glow{from{opacity:.85}to{opacity:1}}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="in">
+  <div>
+    <h1>Anime Universe Studio</h1>
+    <p>Anime Chronicles-এর প্রতিটা এপিসোড ৯টা ধাপে বানান। প্রতিটা ধাপে Claude কাজ করবে, আপনি অনুমোদন দিলে পরের ধাপ খুলবে।</p>
+    <div class="eprow">
+      <select id="epSel" aria-label="এপিসোড বেছে নিন"></select>
+      <button id="newEp" type="button">+ নতুন এপিসোড</button>
+    </div>
+  </div>
+  <div class="slate" aria-hidden="true"><svg id="slate" viewBox="0 0 600 260" preserveAspectRatio="xMidYMid slice"></svg></div>
+</div></header>
+
+<main class="wrap">
+  <nav class="rail" id="rail" aria-label="ধাপসমূহ"></nav>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <details class="bible" id="bibleBox">
+      <summary>Series bible ও চরিত্র (একবার লিখে রাখুন, প্রতিটা ধাপে Claude পড়বে)</summary>
+      <textarea id="bible" style="min-height:180px" placeholder="গল্প এখন কোথায়, চরিত্রদের বর্ণনা, anime style-এর নিয়ম, রং, ভয়েসওভারের ভাষা, আগের এপিসোডগুলোর সারাংশ…"></textarea>
+      <div class="acts" style="margin-top:10px"><button id="saveBible" type="button">Bible সেভ করুন</button></div>
+    </details>
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+</main>
+
+<script type="application/json" id="state">{"bible":"","active":0,"episodes":[{"id":"ep002","title":"EP002","cur":0,"stages":{}}]}</script>
+<div class="note" style="max-width:1240px;margin:0 auto 24px;padding:8px 12px" id="saNote" hidden>এটা GitHub-এ চলা সংস্করণ। এখানে Claude দিয়ে লেখা, ElevenLabs/Cartesia ভয়েস আর অনলাইন সেভ চলে না; কাজ শুধু এই ব্রাউজারে সেভ থাকে। পূর্ণ সংস্করণ claude.ai-তে খুলুন।</div>
+<script src="studio.js"></script>
+<script>if(window.__STANDALONE)document.getElementById("saNote").hidden=false</script>
+</body>
+</html>
