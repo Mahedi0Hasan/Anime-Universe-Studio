@@ -88,8 +88,74 @@ label{font-weight:600;display:block;margin-bottom:6px}
 </main>
 
 <script type="application/json" id="state">{"bible":"","active":0,"episodes":[{"id":"ep002","title":"EP002","cur":0,"stages":{}}]}</script>
-<div class="note" style="max-width:1240px;margin:0 auto 24px;padding:8px 12px" id="saNote" hidden>এটা GitHub-এ চলা সংস্করণ। এখানে Claude দিয়ে লেখা, ElevenLabs/Cartesia ভয়েস আর অনলাইন সেভ চলে না; কাজ শুধু এই ব্রাউজারে সেভ থাকে। পূর্ণ সংস্করণ claude.ai-তে খুলুন।</div>
-<script src="studio.js"></script>
-<script>if(window.__STANDALONE)document.getElementById("saNote").hidden=false</script>
+<div class="note" style="max-width:1240px;margin:0 auto 24px;padding:8px 12px" id="saNote" hidden></div>
+<style>[hidden]{display:none!important}</style>
+<div id="gate" hidden style="position:fixed;inset:0;background:rgba(15,18,24,.92);display:grid;place-items:center;z-index:50;padding:16px">
+  <form id="gateForm" style="background:var(--card);color:var(--ink);border-radius:16px;padding:24px;width:min(380px,100%);display:flex;flex-direction:column;gap:12px">
+    <h2 style="font-size:24px">Studio-তে ঢুকুন</h2>
+    <label for="gatePass">পাসওয়ার্ড</label>
+    <input id="gatePass" type="password" autocomplete="current-password" required>
+    <div id="gateMsg" class="status"></div>
+    <button class="pri" type="submit">ঢুকুন</button>
+    <button type="button" id="gateOffline">পাসওয়ার্ড ছাড়া (শুধু এই ব্রাউজারে)</button>
+  </form>
+</div>
+<script>
+{
+const KEY='au-studio-key';
+const note=t=>{const n=document.getElementById('saNote');n.textContent=t;n.hidden=!t};
+const boot=(online)=>{
+  window.__STANDALONE=true;
+  if(online){
+    window.__API=true;
+    const H=()=>({'Content-Type':'application/json','x-studio-key':window.__STUDIO_KEY});
+    const sample=async(input,opts={})=>{
+      if(Array.isArray(input))input=input.map(m=>m.role+': '+m.content).join('\n\n');
+      const r=await fetch('/api/claude',{method:'POST',headers:H(),body:JSON.stringify({input,tier:opts.modelTier}),signal:opts.signal});
+      if(!r.ok){let m=r.statusText;try{m=(await r.json()).error}catch(_){}throw {code:r.status===429?'rate_limited':'error',message:m}}
+      const rd=r.body.getReader(),dec=new TextDecoder();let text='',meta={};
+      for(;;){const {done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});
+        const z=text.indexOf('\u0000');const shown=z>=0?text.slice(0,z):text;if(opts.onText)opts.onText({text:shown,delta:''})}
+      const z=text.indexOf('\u0000');if(z>=0){try{meta=JSON.parse(text.slice(z+1))}catch(_){}text=text.slice(0,z)}
+      return {text,truncated:meta.stop==='max_tokens'}};
+    sample.json=async(input,opts)=>{const r=await sample(input+'\n\nReturn only valid JSON, no prose.',opts);const m=r.text.match(/[\[{][\s\S]*[\]}]/);return JSON.parse(m?m[0]:r.text)};
+    const artifact={publish:async(html)=>{const m=html.match(/<script type="application\/json" id="state">([\s\S]*?)<\/script>/);if(!m)throw {message:'state not found'};
+      const r=await fetch('/api/state',{method:'PUT',headers:H(),body:m[1]});if(!r.ok){let e='';try{e=(await r.json()).error}catch(_){}throw {code:'error',message:e}}}};
+    const caps={sample,artifact,mcp:{api:true}};
+    window.claude={use:n=>Promise.resolve(caps[n]||null)};
+    note('');
+  }else{
+    window.claude={use:()=>Promise.resolve(null)};
+    note('অফলাইন মোড: Claude, ভয়েস আর অনলাইন সেভ বন্ধ; কাজ শুধু এই ব্রাউজারে সেভ থাকবে। পূর্ণ সুবিধার জন্য পেজ রিলোড করে পাসওয়ার্ড দিন।');
+  }
+  const sc=document.createElement('script');sc.src='studio.js';document.body.appendChild(sc);
+};
+const tryKey=async(k)=>{
+  const r=await fetch('/api/state',{headers:{'x-studio-key':k}}).catch(()=>null);
+  if(!r)return 'net';
+  if(r.status===401)return 'bad';
+  if(r.status===503){let e='';try{e=(await r.json()).error}catch(_){}return 'cfg:'+e}
+  if(!r.ok){let e='';try{e=(await r.json()).error}catch(_){}return 'err:'+e}
+  const d=await r.json();
+  if(d.state){document.getElementById('state').textContent=JSON.stringify(d.state)}
+  else{try{const l=localStorage.getItem('au-studio');if(l)document.getElementById('state').textContent=l}catch(_){}}
+  return 'ok';
+};
+const gate=document.getElementById('gate'),msg=document.getElementById('gateMsg');
+const start=async()=>{
+  let k='';try{k=localStorage.getItem(KEY)||''}catch(_){}
+  if(k){window.__STUDIO_KEY=k;const s=await tryKey(k);if(s==='ok')return boot(true);if(s.startsWith('cfg:')){boot(false);note('সার্ভার এখনো সেট করা হয়নি: '+s.slice(4));return}}
+  gate.hidden=false;document.getElementById('gatePass').focus();
+};
+document.getElementById('gateForm').addEventListener('submit',async ev=>{ev.preventDefault();
+  const k=document.getElementById('gatePass').value;msg.textContent='যাচাই হচ্ছে…';window.__STUDIO_KEY=k;const s=await tryKey(k);
+  if(s==='ok'){try{localStorage.setItem(KEY,k)}catch(_){}gate.hidden=true;boot(true)}
+  else if(s==='bad')msg.textContent='পাসওয়ার্ড ভুল।';
+  else if(s.startsWith('cfg:')){gate.hidden=true;boot(false);note('সার্ভার এখনো সেট করা হয়নি: '+s.slice(4))}
+  else msg.textContent='সার্ভারে পৌঁছানো যায়নি। '+(s.startsWith('err:')?s.slice(4):'');});
+document.getElementById('gateOffline').addEventListener('click',()=>{gate.hidden=true;boot(false)});
+start();
+}
+</script>
 </body>
 </html>

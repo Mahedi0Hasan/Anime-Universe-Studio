@@ -1,4 +1,4 @@
-if(typeof window.claude==='undefined'){window.claude={use:()=>Promise.resolve(null)};window.__STANDALONE=true}
+if(typeof window.claude==="undefined"){window.claude={use:()=>Promise.resolve(null)};window.__STANDALONE=true}
 {
 
 const STAGES=[
@@ -137,20 +137,21 @@ function cxUI(e){
    <div class="acts">${V.confirm?`<button class="pri" id="cgo" type="button"${V.busy?' disabled':''}>হ্যাঁ, ক্রেডিট খরচ করে বানাও</button><button id="vno" type="button">বাতিল</button>`:`<button class="pri" id="cmake" type="button"${V.busy||!c.voice_id?' disabled':''}>ভয়েস বানাও</button>`}</div>
    ${V.confirm?'<div class="note">এতে আপনার Cartesia ক্রেডিট খরচ হবে। একবার চাপলে একবারই বানাবে।</div>':''}
    <div class="status" id="vstatus"></div>
-   ${c.audio?`<div class="res"><b>শেষ ভয়েস</b> (${esc(c.voice_name||'')}, ${esc(c.emo||'neutral')})<br><a class="lnk" href="${esc(c.audio)}" target="_blank" rel="noopener">শুনুন / ডাউনলোড ▶</a><br><small style="color:var(--mute)">লিংক কিছু সময় পর মেয়াদ শেষ হতে পারে, MP3 নামিয়ে রাখুন।</small></div>`:''}
+   ${V.cxLocal?audioBox(V.cxLocal,'cartesia'):''}
+   ${!(mcp&&mcp.api)&&c.audio?`<div class="res"><b>শেষ ভয়েস</b> (${esc(c.voice_name||'')}, ${esc(c.emo||'neutral')})<br><a class="lnk" href="${esc(c.audio)}" target="_blank" rel="noopener">শুনুন / ডাউনলোড ▶</a><br><small style="color:var(--mute)">লিংক কিছু সময় পর মেয়াদ শেষ হতে পারে, MP3 নামিয়ে রাখুন।</small></div>`:''}
   </div>`;
 }
 function cread(e){const v=e.voice||(e.voice={});const c=v.cx||(v.cx={});const g=id=>{const n=$(id);return n?n.value:undefined};
   if(g('#clang')!==undefined)c.lang=g('#clang');if(g('#cq')!==undefined)c.q=g('#cq');if(g('#cemo')!==undefined)c.emo=g('#cemo');
   if(g('#cspeed')!==undefined){const n=parseFloat(g('#cspeed'));c.speed=isFinite(n)?Math.min(1.5,Math.max(0.6,n)):1}
   if(g('#ctext')!==undefined)c.text=g('#ctext');return c}
-async function cfind(){const e=ep(),c=cread(e);V.busy=true;render();vset('Cartesia ভয়েস খোঁজা হচ্ছে…');
+async function cfind(){if(mcp&&mcp.api)return apiCfind();const e=ep(),c=cread(e);V.busy=true;render();vset('Cartesia ভয়েস খোঁজা হচ্ছে…');
   try{const a={language:c.lang||'hi',limit:15,include_preview_url:true};if(c.q)a.search_query=c.q;
     const d=await cx('CARTESIA_LIST_VOICES',a);V.cvoices=(d&&d.items)||pick(d,['items'])||[];
     V.msg=V.cvoices.length?'একটা ভয়েস বাছুন।':'এই ভাষায় কোনো ভয়েস পাওয়া যায়নি, অন্য ভাষা বা শব্দ দিয়ে খুঁজুন।'}
   catch(err){V.msg='খোঁজা যায়নি: '+(err&&(err.message||err.code)||'')}
   V.busy=false;render();vset(V.msg)}
-async function cmake(){const e=ep(),c=cread(e);if(!c.text||!c.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
+async function cmake(){if(mcp&&mcp.api)return apiCmake();const e=ep(),c=cread(e);if(!c.text||!c.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
   V.busy=true;V.confirm=false;render();vset('Cartesia ভয়েস বানাচ্ছে… (লম্বা লেখায় একটু সময় লাগে)');
   try{const a={transcript:c.text,voice_id:c.voice_id,language:c.lang||'hi',output_container:'mp3',model_id:'sonic-3.6'};
     if(c.emo&&c.emo!=='neutral')a.emotion=c.emo;if(c.speed&&c.speed!==1)a.speed=c.speed;
@@ -176,23 +177,24 @@ function elUI(e){
    ${V.confirm?`<button class="pri" id="vgo" type="button"${V.busy?' disabled':''}>হ্যাঁ, ক্রেডিট খরচ করে বানাও</button><button id="vno" type="button">বাতিল</button>`:`<button class="pri" id="vmake" type="button"${V.busy||!v.voice_id?' disabled':''}>ভয়েস বানাও</button>`}</div>
    ${V.confirm?'<div class="note">এতে আপনার ElevenLabs ক্রেডিট খরচ হবে। একবার চাপলে একবারই বানাবে।</div>':''}
    <div class="status" id="vstatus"></div>
-   ${v.audio||v.flow_url?`<div class="res"><b>শেষ ভয়েস</b> (${esc(v.voice_name||'')})<br>${isUrl(v.audio)?`<a class="lnk" href="${esc(v.audio)}" target="_blank" rel="noopener">শুনুন / ডাউনলোড ▶</a> `:''}${isUrl(v.flow_url)?` · <a class="lnk" href="${esc(v.flow_url)}" target="_blank" rel="noopener">ElevenLabs-এ খুলুন</a>`:''}<br><small style="color:var(--mute)">লিংক কিছু সময় পর মেয়াদ শেষ হতে পারে, MP3 নামিয়ে রাখুন।</small></div>`:''}
+   ${V.elLocal?audioBox(V.elLocal,'elevenlabs'):''}
+   ${!(mcp&&mcp.api)&&(v.audio||v.flow_url)?`<div class="res"><b>শেষ ভয়েস</b> (${esc(v.voice_name||'')})<br>${isUrl(v.audio)?`<a class="lnk" href="${esc(v.audio)}" target="_blank" rel="noopener">শুনুন / ডাউনলোড ▶</a> `:''}${isUrl(v.flow_url)?` · <a class="lnk" href="${esc(v.flow_url)}" target="_blank" rel="noopener">ElevenLabs-এ খুলুন</a>`:''}<br><small style="color:var(--mute)">লিংক কিছু সময় পর মেয়াদ শেষ হতে পারে, MP3 নামিয়ে রাখুন।</small></div>`:''}
   </div>`;
 }
 function vset(t){V.msg=t;const el2=$('#vstatus');if(el2)el2.textContent=t}
 function vread(e){const v=e.voice||(e.voice={});const g=id=>{const n=$(id);return n?n.value:undefined};
   if(g('#vlang')!==undefined)v.lang=g('#vlang');if(g('#vq')!==undefined)v.q=g('#vq');if(g('#vmodel')!==undefined)v.model=g('#vmodel');if(g('#vtext')!==undefined)v.text=g('#vtext');return v}
-async function vfind(){const e=ep(),v=vread(e);V.busy=true;render();vset('ভয়েস খোঁজা হচ্ছে…');
+async function vfind(){if(mcp&&mcp.api)return apiVfind();const e=ep(),v=vread(e);V.busy=true;render();vset('ভয়েস খোঁজা হচ্ছে…');
   try{const inp={languages:[v.lang||'hi'],page_size:12};if(v.q)inp.search=v.q;else inp.use_cases=['narrative_story'];
     const p=await el('creative_list_voices',inp);V.voices=(p&&p.voices)||[];V.msg=V.voices.length?'একটা ভয়েস বাছুন, "নমুনা" চেপে শুনতে পারেন।':'কোনো ভয়েস পাওয়া যায়নি, অন্য শব্দে খুঁজুন।'}
   catch(err){V.msg='খোঁজা যায়নি: '+(err&&(err.message||err.code)||'')}
   V.busy=false;render();vset(V.msg)}
 function vinput(v){return{prompt:v.text,model_id:v.model||'eleven_v4',voice_id:v.voice_id,generations_count:1}}
-async function vcost(){const e=ep(),v=vread(e);if(!v.text||!v.text.trim())return vset('আগে লেখাটা দিন।');V.busy=true;render();vset('খরচ হিসাব হচ্ছে…');
+async function vcost(){if(mcp&&mcp.api)return apiVcost();const e=ep(),v=vread(e);if(!v.text||!v.text.trim())return vset('আগে লেখাটা দিন।');V.busy=true;render();vset('খরচ হিসাব হচ্ছে…');
   try{const p=await el('creative_generate_speech',{...vinput(v),estimate_only:true});let c=[];walk(p,(k,x)=>{if(/credit|cost/i.test(k)&&(typeof x==='number'||typeof x==='string'))c.push(k+': '+x)});V.msg=c.length?'আনুমানিক খরচ — '+c.join(', '):'খরচের হিসাব পাওয়া গেছে, কিন্তু সংখ্যা বোঝা গেল না।'}
   catch(err){V.msg='খরচ দেখা যায়নি: '+(err&&(err.message||err.code)||'')}
   V.busy=false;render();vset(V.msg)}
-async function vmake(){const e=ep(),v=vread(e);if(!v.text||!v.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
+async function vmake(){if(mcp&&mcp.api)return apiVmake();const e=ep(),v=vread(e);if(!v.text||!v.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
   V.busy=true;V.confirm=false;render();vset('ভয়েস বানানো শুরু হচ্ছে…');
   try{const p=await el('creative_generate_speech',vinput(v));
     const flow=p&&p.flow_id,sess=pick(p,['session_ids','session_id']).filter(x=>typeof x==='string');
@@ -283,6 +285,31 @@ document.addEventListener('input',ev=>{const e=ep(),x=st(e,e.cur);
 document.addEventListener('focusout',ev=>{if(ev.target.id==='out'||ev.target.id==='note')save();if(['vtext','vq','vlang','vmodel'].includes(ev.target.id)){vread(ep());save()}if(['ctext','cq','clang','cemo','cspeed'].includes(ev.target.id)){cread(ep());save()}});
 try{if(!S.bible&&S.episodes.length===1&&!Object.keys(S.episodes[0].stages).length){const l=JSON.parse(localStorage.getItem('au-studio')||'null');if(l&&l.episodes)S=l}}catch(e){}
 
+
+/* ---------- Vercel API mode (own server keys) ---------- */
+function apiH(){return {'Content-Type':'application/json','x-studio-key':window.__STUDIO_KEY||''}}
+async function apiJ(path,body){const r=await fetch(path,{method:body?'POST':'GET',headers:apiH(),body:body?JSON.stringify(body):undefined});
+  if(!r.ok){let m='';try{m=(await r.json()).error}catch(_){m=r.statusText}throw {message:m||('HTTP '+r.status)}}return r}
+function audioBox(a,who){return `<div class="res"><b>শেষ ভয়েস</b> (${esc(a.name||'')})<br><audio controls src="${a.url}" style="width:100%;margin:6px 0"></audio><a class="lnk" href="${a.url}" download="${esc(ep().title)}-${who}.mp3">MP3 ডাউনলোড ⬇</a><br><small style="color:var(--mute)">পেজ বন্ধ করলে এই অডিও থাকবে না, এখনই নামিয়ে রাখুন।</small></div>`}
+async function apiVfind(){const e=ep(),v=vread(e);V.busy=true;render();vset('ভয়েস খোঁজা হচ্ছে…');
+  try{const r=await apiJ('/api/el?action=voices&lang='+encodeURIComponent(v.lang||'hi')+'&q='+encodeURIComponent(v.q||''));const d=await r.json();V.voices=d.voices||[];
+    V.msg=V.voices.length?'একটা ভয়েস বাছুন, "নমুনা" চেপে শুনতে পারেন।':'কোনো ভয়েস পাওয়া যায়নি, অন্য শব্দে খুঁজুন।'}
+  catch(err){V.msg='খোঁজা যায়নি: '+(err.message||'')}V.busy=false;render();vset(V.msg)}
+async function apiVcost(){const v=vread(ep());const n=(v.text||'').length;vset(`লেখায় ${n} অক্ষর। ElevenLabs সাধারণত প্রতি অক্ষরে প্রায় ১ ক্রেডিট নেয় (মডেল অনুযায়ী কম-বেশি)।`)}
+async function apiVmake(){const e=ep(),v=vread(e);if(!v.text||!v.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
+  V.busy=true;V.confirm=false;render();vset('ElevenLabs ভয়েস বানাচ্ছে…');
+  try{const x=V.voices.find(y=>y.voice_id===v.voice_id)||{};const r=await apiJ('/api/el?action=tts',{text:v.text,voice_id:v.voice_id,model_id:v.model||'eleven_multilingual_v2',owner:x.public_owner_id||''});
+    const b=await r.blob();if(V.elLocal)URL.revokeObjectURL(V.elLocal.url);V.elLocal={url:URL.createObjectURL(b),name:v.voice_name||''};V.msg='ভয়েস তৈরি হয়েছে! নিচে শুনুন ও ডাউনলোড করুন।'}
+  catch(err){V.msg='ভয়েস বানানো যায়নি: '+(err.message||'')}V.busy=false;render();vset(V.msg)}
+async function apiCfind(){const e=ep(),c=cread(e);V.busy=true;render();vset('Cartesia ভয়েস খোঁজা হচ্ছে…');
+  try{const r=await apiJ('/api/cx?action=voices&lang='+encodeURIComponent(c.lang||'hi')+'&q='+encodeURIComponent(c.q||''));const d=await r.json();V.cvoices=d.voices||[];
+    V.msg=V.cvoices.length?'একটা ভয়েস বাছুন।':'এই ভাষায় কোনো ভয়েস পাওয়া যায়নি।'}
+  catch(err){V.msg='খোঁজা যায়নি: '+(err.message||'')}V.busy=false;render();vset(V.msg)}
+async function apiCmake(){const e=ep(),c=cread(e);if(!c.text||!c.text.trim()){V.confirm=false;render();return vset('আগে লেখাটা দিন।')}
+  V.busy=true;V.confirm=false;render();vset('Cartesia ভয়েস বানাচ্ছে…');
+  try{const r=await apiJ('/api/cx?action=tts',{text:c.text,voice_id:c.voice_id,lang:c.lang||'hi',emotion:c.emo||'neutral',speed:c.speed||1});
+    const b=await r.blob();if(V.cxLocal)URL.revokeObjectURL(V.cxLocal.url);V.cxLocal={url:URL.createObjectURL(b),name:(c.voice_name||'')+', '+(c.emo||'neutral')};V.msg='ভয়েস তৈরি হয়েছে! নিচে শুনুন ও ডাউনলোড করুন।'}
+  catch(err){V.msg='ভয়েস বানানো যায়নি: '+(err.message||'')}V.busy=false;render();vset(V.msg)}
 /* ---------- Storyboard -> MP4 (animatic) ---------- */
 let dl=null;claude.use("downloads").then(x=>{dl=x;if(ep().cur===5||ep().cur===6)render()});
 const A={files:{},audio:null,busy:false,msg:'',url:'',stop:false};
